@@ -90,7 +90,11 @@ func (b *Bucket) DeleteChannel(ch *Channel) {
 		ok   bool
 		room *Room
 	)
-	b.cLock.RLock()
+	// must hold the write lock: this function deletes from b.chs and b.rooms.
+	// RLock allows multiple goroutines in concurrently, so concurrent
+	// disconnects trigger "fatal error: concurrent map read and map write"
+	b.cLock.Lock()
+	defer b.cLock.Unlock()
 	if ch, ok = b.chs[ch.userId]; ok {
 		room = b.chs[ch.userId].Room
 		//delete from bucket
@@ -102,7 +106,6 @@ func (b *Bucket) DeleteChannel(ch *Channel) {
 			delete(b.rooms, room.Id)
 		}
 	}
-	b.cLock.RUnlock()
 }
 
 func (b *Bucket) Channel(userId int) (ch *Channel) {
