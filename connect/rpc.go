@@ -63,7 +63,9 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 	reply := &proto.ConnectReply{}
 	err = logicRpcClient.Call(context.Background(), "Connect", connReq, reply)
 	if err != nil {
-		logrus.Fatalf("failed to call: %v", err)
+		// a single connection's rpc failure must not kill the whole process
+		logrus.Errorf("failed to call Connect: %v", err)
+		return 0, err
 	}
 	uid = reply.UserId
 	logrus.Infof("connect logic userId :%d", reply.UserId)
@@ -73,7 +75,8 @@ func (rpc *RpcConnect) Connect(connReq *proto.ConnectRequest) (uid int, err erro
 func (rpc *RpcConnect) DisConnect(disConnReq *proto.DisConnectRequest) (err error) {
 	reply := &proto.DisConnectReply{}
 	if err = logicRpcClient.Call(context.Background(), "DisConnect", disConnReq, reply); err != nil {
-		logrus.Fatalf("failed to call: %v", err)
+		logrus.Errorf("failed to call DisConnect: %v", err)
+		return err
 	}
 	return
 }
